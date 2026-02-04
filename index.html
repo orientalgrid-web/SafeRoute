@@ -1,105 +1,770 @@
-<!-- In your HTML file, replace lines 391-410 with this: -->
-<script>
-    // SafeRoute Application
-    const SafeRoute = {
-        // ... existing code ...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute - Personal Safety Companion</title>
+    
+    <!-- Mapbox CSS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        // Start tracking
-        startTracking() {
-            if (!this.config.route.start || !this.config.route.end) {
-                this.showToast('Please save your route first', 'warning');
-                return;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .app-container {
+            max-width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header h1 {
+            color: #4a5568;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #4a5568;
+        }
+        
+        .card-title i {
+            margin-right: 12px;
+            font-size: 24px;
+            color: #667eea;
+        }
+        
+        .card-title h2 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        /* Map Styles */
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .map-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-item i {
+            margin-right: 8px;
+            color: #48bb78;
+        }
+        
+        /* Button Styles */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn i {
+            margin-right: 10px;
+        }
+        
+        .btn-emergency {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(245, 101, 101, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 101, 101, 0); }
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* Contacts List */
+        .contacts-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .contact-info h4 {
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .contact-info p {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .contact-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .icon-btn {
+            background: #e2e8f0;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .icon-btn:hover {
+            background: #cbd5e0;
+        }
+        
+        /* Emergency Contacts */
+        .emergency-contacts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .emergency-contact {
+            background: #fff5f5;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #fed7d7;
+        }
+        
+        .emergency-contact i {
+            font-size: 28px;
+            color: #f56565;
+            margin-bottom: 10px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .emergency-contacts {
+                grid-template-columns: 1fr;
             }
             
-            if (!this.state.currentLocation) {
-                this.showToast('Waiting for GPS location...', 'info');
-                return;
+            .header h1 {
+                font-size: 24px;
             }
             
-            this.state.isTracking = !this.state.isTracking;
-            const button = document.getElementById('trackButton');
-            
-            if (this.state.isTracking) {
-                button.innerHTML = '<i class="fas fa-stop"></i> Stop Tracking';
-                button.style.background = 'var(--danger-red)';
-                
-                document.getElementById('trackingStatus').innerHTML = 
-                    '<i class="fas fa-circle" style="color: var(--safety-green); animation: pulse 1s infinite;"></i><span>LIVE TRACKING</span>';
-                
-                this.initMap();
-                this.showToast('Live tracking started!', 'success');
-            } else {
-                button.innerHTML = '<i class="fas fa-play"></i> Start Tracking';
-                button.style.background = 'var(--primary-blue)';
-                
-                document.getElementById('trackingStatus').innerHTML = 
-                    '<i class="fas fa-circle" style="color: var(--text-dim);"></i><span>READY</span>';
-                
-                this.showToast('Tracking stopped', 'info');
+            .card {
+                padding: 20px;
             }
-        },
-
-        // Initialize map with Mapbox
-        initMap() {
-            if (this.state.map) return;
-            
-            try {
-                // YOUR MAPBOX TOKEN HERE - REPLACE THIS!
-                mapboxgl.accessToken = 'pk.eyJ1IjoiZWtlaWRpbWF1Y2hlY2h1a3d1IiwiYSI6ImNtbDZkemZvYzBjNzIzZ3NjMm00MWpiejgifQ.llSfz7vrolfKan4T0zw9TQ';
-                
-                this.state.map = new mapboxgl.Map({
-                    container: 'trackingMap',
-                    style: 'mapbox://styles/mapbox/satellite-streets-v11',
-                    center: this.state.currentLocation ? 
-                           [this.state.currentLocation.lng, this.state.currentLocation.lat] : 
-                           [0, 0],
-                    zoom: 14,
-                    interactive: true
-                });
-                
-                // Add navigation controls
-                this.state.map.addControl(new mapboxgl.NavigationControl());
-                
-                // Add marker
-                this.state.mapMarker = new mapboxgl.Marker({ 
-                    color: '#FF3366',
-                    draggable: false 
-                })
-                .setLngLat([this.state.currentLocation.lng, this.state.currentLocation.lat])
-                .addTo(this.state.map);
-                
-                // Add popup
-                this.state.mapMarker.setPopup(
-                    new mapboxgl.Popup({ offset: 25 })
-                        .setHTML('<h3>Your Location</h3><p>Live tracking active</p>')
-                );
-                
-            } catch (error) {
-                console.error('Mapbox error:', error);
-                this.showToast('Map loading issue - using fallback', 'warning');
-                this.useFallbackMap();
-            }
-        },
-
-        // Fallback if Mapbox fails
-        useFallbackMap() {
-            const mapDiv = document.getElementById('trackingMap');
-            const lat = this.state.currentLocation.lat;
-            const lng = this.state.currentLocation.lng;
-            
-            mapDiv.innerHTML = `
-                <div style="width:100%; height:100%; background:#112240; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <i class="fas fa-map-marked-alt" style="font-size:48px; color:var(--primary-blue); margin-bottom:20px;"></i>
-                    <div style="color:var(--text-light); font-size:18px; font-weight:600; margin-bottom:10px;">Live Location</div>
-                    <div style="color:var(--text-dim); font-size:14px; margin-bottom:5px;">Latitude: ${lat.toFixed(6)}</div>
-                    <div style="color:var(--text-dim); font-size:14px; margin-bottom:5px;">Longitude: ${lng.toFixed(6)}</div>
-                    <div style="color:var(--safety-green); font-size:12px; margin-top:15px;">
-                        <i class="fas fa-info-circle"></i> GPS tracking active
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> SafeRoute</h1>
+            <p>Your personal safety companion</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- GPS Tracking Card -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h2>Live GPS Tracking</h2>
+                </div>
+                <div id="map"></div>
+                <div class="map-status">
+                    <div class="status-item">
+                        <i class="fas fa-satellite"></i>
+                        <span id="gpsStatus">Acquiring GPS...</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-battery-three-quarters"></i>
+                        <span id="batteryStatus">Checking battery...</span>
                     </div>
                 </div>
-            `;
-        },
+                <button class="btn" onclick="shareLocation()">
+                    <i class="fas fa-share"></i> Share My Location
+                </button>
+            </div>
+            
+            <!-- Emergency SOS Card -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-bell"></i>
+                    <h2>Emergency SOS</h2>
+                </div>
+                <p style="margin-bottom: 20px; color: #718096;">
+                    In case of emergency, send your location and a distress signal to your emergency contacts.
+                </p>
+                <button class="btn btn-emergency" onclick="triggerEmergency()">
+                    <i class="fas fa-exclamation-triangle"></i> EMERGENCY SOS
+                </button>
+            </div>
+            
+            <!-- Emergency Contacts Card -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-phone-alt"></i>
+                    <h2>Emergency Contacts</h2>
+                </div>
+                
+                <div class="emergency-contacts">
+                    <div class="emergency-contact">
+                        <i class="fas fa-ambulance"></i>
+                        <h3>Ambulance</h3>
+                        <p>911</p>
+                    </div>
+                    <div class="emergency-contact">
+                        <i class="fas fa-police-car"></i>
+                        <h3>Police</h3>
+                        <p>911</p>
+                    </div>
+                    <div class="emergency-contact">
+                        <i class="fas fa-fire-extinguisher"></i>
+                        <h3>Fire Department</h3>
+                        <p>911</p>
+                    </div>
+                    <div class="emergency-contact">
+                        <i class="fas fa-user-friends"></i>
+                        <h3>Trusted Contact</h3>
+                        <p id="trustedContact">Not set</p>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="callEmergency('911')">
+                    <i class="fas fa-phone"></i> Call Emergency Services
+                </button>
+            </div>
+            
+            <!-- Contact Management Card -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-address-book"></i>
+                    <h2>Contact Management</h2>
+                </div>
+                
+                <div class="contacts-list" id="contactsList">
+                    <!-- Contacts will be added here dynamically -->
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactName">Contact Name</label>
+                    <input type="text" id="contactName" placeholder="Enter name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactPhone">Phone Number</label>
+                    <input type="tel" id="contactPhone" placeholder="Enter phone number">
+                </div>
+                
+                <button class="btn" onclick="addContact()">
+                    <i class="fas fa-plus"></i> Add Contact
+                </button>
+            </div>
+            
+            <!-- Message Contacts Card -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-comment-alt"></i>
+                    <h2>Send Message</h2>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">Recipient Phone Number</label>
+                    <input type="tel" id="phoneNumber" placeholder="Enter phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" rows="3" placeholder="Type your message here...">I'm using SafeRoute. My current location is: </textarea>
+                </div>
+                
+                <button class="btn" id="sendSMSBtn">
+                    <i class="fas fa-paper-plane"></i> Send SMS
+                </button>
+            </div>
+        </div>
         
-        // ... rest of the code ...
-    };
-</script>)
+        <!-- Footer -->
+        <div class="footer">
+            <p>SafeRoute v1.0 • Your safety is our priority</p>
+            <p style="margin-top: 5px; opacity: 0.8;">GPS tracking and emergency services</p>
+        </div>
+    </div>
+
+    <!-- Mapbox JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+    
+    <script>
+        // Mapbox Access Token
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2x2cGRvNWtrMDJzcDJrcXBmcjVkdG5yYiJ9.abc123def456';
+        
+        // Initialize Map
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-74.5, 40], // Default center (NYC)
+            zoom: 12
+        });
+        
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl());
+        
+        // GPS Tracking Variables
+        let currentLocation = null;
+        let watchId = null;
+        let batteryLevel = 100;
+        let isCharging = false;
+        let emergencyContacts = [];
+        
+        // Load saved contacts from localStorage
+        function loadContacts() {
+            const saved = localStorage.getItem('safeRouteContacts');
+            if (saved) {
+                emergencyContacts = JSON.parse(saved);
+                updateContactsList();
+            }
+            
+            // Load trusted contact
+            const trusted = localStorage.getItem('trustedContact');
+            if (trusted) {
+                document.getElementById('trustedContact').textContent = trusted;
+            }
+        }
+        
+        // Save contacts to localStorage
+        function saveContacts() {
+            localStorage.setItem('safeRouteContacts', JSON.stringify(emergencyContacts));
+        }
+        
+        // Update contacts list display
+        function updateContactsList() {
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '';
+            
+            if (emergencyContacts.length === 0) {
+                contactsList.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">No contacts added yet.</p>';
+                return;
+            }
+            
+            emergencyContacts.forEach((contact, index) => {
+                const contactElement = document.createElement('div');
+                contactElement.className = 'contact-item';
+                contactElement.innerHTML = `
+                    <div class="contact-info">
+                        <h4>${contact.name}</h4>
+                        <p>${contact.phone}</p>
+                    </div>
+                    <div class="contact-actions">
+                        <button class="icon-btn" onclick="messageContact('${contact.phone}')" title="Message">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                        <button class="icon-btn" onclick="callContact('${contact.phone}')" title="Call">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="icon-btn" onclick="removeContact(${index})" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                contactsList.appendChild(contactElement);
+            });
+        }
+        
+        // Add new contact
+        function addContact() {
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            
+            if (!name || !phone) {
+                alert('Please enter both name and phone number');
+                return;
+            }
+            
+            // Simple phone validation
+            const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+            const cleanPhone = phone.replace(/\D/g, '');
+            
+            if (!phoneRegex.test(cleanPhone)) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+            
+            emergencyContacts.push({ name, phone: cleanPhone });
+            saveContacts();
+            updateContactsList();
+            
+            // Clear inputs
+            document.getElementById('contactName').value = '';
+            document.getElementById('contactPhone').value = '';
+            
+            // If first contact, set as trusted
+            if (emergencyContacts.length === 1) {
+                setTrustedContact(name);
+            }
+            
+            alert('Contact added successfully!');
+        }
+        
+        // Remove contact
+        function removeContact(index) {
+            if (confirm('Remove this contact?')) {
+                emergencyContacts.splice(index, 1);
+                saveContacts();
+                updateContactsList();
+            }
+        }
+        
+        // Set trusted contact
+        function setTrustedContact(name) {
+            localStorage.setItem('trustedContact', name);
+            document.getElementById('trustedContact').textContent = name;
+        }
+        
+        // Call contact
+        function callContact(phone) {
+            window.location.href = `tel:${phone}`;
+        }
+        
+        // Message contact
+        function messageContact(phone) {
+            document.getElementById('phoneNumber').value = phone;
+            document.getElementById('message').focus();
+        }
+        
+        // Call emergency services
+        function callEmergency(number) {
+            window.location.href = `tel:${number}`;
+        }
+        
+        // Start GPS Tracking
+        function startGPSTracking() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        currentLocation = { lat: latitude, lng: longitude, accuracy };
+                        
+                        // Update map
+                        map.flyTo({
+                            center: [longitude, latitude],
+                            zoom: 15,
+                            essential: true
+                        });
+                        
+                        // Update marker
+                        const marker = new mapboxgl.Marker({ color: '#f56565' })
+                            .setLngLat([longitude, latitude])
+                            .addTo(map);
+                        
+                        // Remove previous markers
+                        setTimeout(() => {
+                            marker.remove();
+                        }, 5000);
+                        
+                        // Update status
+                        document.getElementById('gpsStatus').innerHTML = 
+                            `<i class="fas fa-check-circle" style="color: #48bb78;"></i> GPS Active (Accuracy: ${Math.round(accuracy)}m)`;
+                    },
+                    (error) => {
+                        console.error('GPS Error:', error);
+                        document.getElementById('gpsStatus').innerHTML = 
+                            `<i class="fas fa-exclamation-circle" style="color: #f56565;"></i> GPS Error`;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 10000,
+                        timeout: 15000
+                    }
+                );
+            } else {
+                document.getElementById('gpsStatus').textContent = 'GPS not supported';
+            }
+        }
+        
+        // Get battery status
+        function getBatteryStatus() {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then((battery) => {
+                    updateBatteryInfo(battery);
+                    
+                    battery.addEventListener('levelchange', () => {
+                        updateBatteryInfo(battery);
+                    });
+                    
+                    battery.addEventListener('chargingchange', () => {
+                        updateBatteryInfo(battery);
+                    });
+                });
+            } else {
+                document.getElementById('batteryStatus').textContent = 'Battery info not available';
+            }
+        }
+        
+        // Update battery display
+        function updateBatteryInfo(battery) {
+            batteryLevel = Math.round(battery.level * 100);
+            isCharging = battery.charging;
+            
+            let batteryIcon = 'fa-battery-empty';
+            if (batteryLevel > 75) batteryIcon = 'fa-battery-full';
+            else if (batteryLevel > 50) batteryIcon = 'fa-battery-three-quarters';
+            else if (batteryLevel > 25) batteryIcon = 'fa-battery-half';
+            else if (batteryLevel > 10) batteryIcon = 'fa-battery-quarter';
+            
+            let chargingText = isCharging ? ' (Charging)' : '';
+            
+            document.getElementById('batteryStatus').innerHTML = 
+                `<i class="fas ${batteryIcon}" style="color: ${batteryLevel < 20 ? '#f56565' : '#48bb78'}"></i> ${batteryLevel}%${chargingText}`;
+        }
+        
+        // Share location via SMS
+        function shareLocation() {
+            if (!currentLocation) {
+                alert('Getting your location... Please wait a moment.');
+                return;
+            }
+            
+            const message = `My current location: https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`;
+            
+            if (emergencyContacts.length > 0) {
+                const phone = emergencyContacts[0].phone;
+                window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+            } else {
+                document.getElementById('phoneNumber').value = '';
+                document.getElementById('message').value = message;
+                document.getElementById('phoneNumber').focus();
+                alert('Please enter a phone number to share your location');
+            }
+        }
+        
+        // Trigger emergency
+        function triggerEmergency() {
+            if (!confirm('⚠️ EMERGENCY SOS\n\nThis will send your location and a distress signal to all emergency contacts. Continue?')) {
+                return;
+            }
+            
+            if (!currentLocation) {
+                alert('Getting your location... Please try again in a moment.');
+                return;
+            }
+            
+            const locationLink = `https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`;
+            const message = `🚨 EMERGENCY SOS from SafeRoute!\n\nI need help! My location: ${locationLink}\n\nTime: ${new Date().toLocaleString()}\nBattery: ${batteryLevel}%${isCharging ? ' (Charging)' : ''}`;
+            
+            // Send to all emergency contacts
+            if (emergencyContacts.length > 0) {
+                emergencyContacts.forEach(contact => {
+                    setTimeout(() => {
+                        window.location.href = `sms:${contact.phone}?body=${encodeURIComponent(message)}`;
+                    }, 100);
+                });
+                
+                // Also call emergency services
+                setTimeout(() => {
+                    callEmergency('911');
+                }, 1000);
+                
+                alert('Emergency SOS activated! Messages sent to all contacts.');
+            } else {
+                alert('No emergency contacts set up. Please add contacts first.');
+            }
+        }
+        
+        // JavaScript to send SMS on button click
+        function sendSMS() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const message = document.getElementById('message').value;
+            
+            // Remove any non-numeric characters from phone number
+            const cleanPhoneNumber = phoneNumber.replace(/\D/g, '');
+            
+            if (!cleanPhoneNumber) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+            
+            if (!message.trim()) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            // Use SMS URI scheme
+            window.location.href = 'sms:' + cleanPhoneNumber + '?body=' + encodeURIComponent(message);
+        }
+        
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved contacts
+            loadContacts();
+            
+            // Start GPS tracking
+            startGPSTracking();
+            
+            // Get battery status
+            getBatteryStatus();
+            
+            // Set up SMS button event listener
+            document.getElementById('sendSMSBtn').addEventListener('click', sendSMS);
+            
+            // Add sample contacts if none exist
+            if (emergencyContacts.length === 0) {
+                setTimeout(() => {
+                    if (confirm('Would you like to add a sample emergency contact to get started?')) {
+                        emergencyContacts.push({ 
+                            name: 'Emergency Contact', 
+                            phone: '911' 
+                        });
+                        saveContacts();
+                        updateContactsList();
+                        setTrustedContact('Emergency Contact');
+                    }
+                }, 2000);
+            }
+            
+            // Auto-focus on name field for better UX
+            document.getElementById('contactName').focus();
+        });
+    </script>
+</body>
+</html>
